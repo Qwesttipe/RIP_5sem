@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Паттерны нагрузки серверов</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body>
+    <div class="header-nav">
+        <a href="/" class="header-nav-link">
+            <img src="http://localhost:3031/imagesforlabs/site-icon.jpg" alt="Паттерны нагрузки" class="header-nav-link">
+        </a>
+    </div>
+    
+    <h1 class="main-title">паттерны нагрузки сервера</h1>
+    
+    <div class="search-container">
+        <form method="GET" action="/">
+            <div class="search-box"></div>
+            <input type="text" name="findloads" class="search-input-field" placeholder="Поиск" value="{{.query}}">
+            <button type="submit" class="search-icon">
+                <img src="http://127.0.0.1:3031/images/img/site-icon" alt="Поиск">
+            </button>
+        </form>
+        <a href="/req/1" class="req-icon">
+            <img src="http://127.0.0.1:3031/images/img/user-icon.jpg" alt="Расчеты">
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="loads-grid">
+            {{range .loads}}
+            <a href="/load/{{.ID}}" class="load-card">
+                <img src="{{.Image}}" alt="{{.Pattern}}">
+                <h3>{{.Pattern}}</h3>
+                <div class="year">НЕОБХОДИМАЯ ЧАСТОТА CPU: {{.CPU}} HHZ.</div>
+                <p><strong>Описание паттерна:</strong> {{.Description}}</p>
+            </a>
+            {{end}}
+        </div>
+    </div>
+</body>
+</html>
