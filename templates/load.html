@@ -1,0 +1,33 @@
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.load.Pattern}}</title>
+    <link rel="stylesheet" href="/resources/style.css">
+</head>
+<body class="detail-page">
+    <div class="header-nav">
+        <a href="/" class="header-nav-link">
+            <img src="http://localhost:3031/browser/imagesforlabs/site-icon.jpg" alt="Паттерны нагрузки" class="header-nav-link">
+        </a>
+    </div>
+    
+
+    <div class="detail-container">
+        <div class="detail-header">
+            <div class="detail-year">НЕОБХОДИМАЯ ЧАСТОТА CPU: {{.load.CPU}} HHZ .</div>
+            <a href="/" class="close-button">
+                <img src="http://127.0.0.1:3031/images/img/close-b.jpg" alt="Закрыть">
+            </a>
+        </div>
+        
+        <h1 class="detail-title">{{.load.Pattern}}</h1>
+        
+        <img src="{{.load.Image}}" alt="{{.load.Pattern}}" class="detail-image">
+        
+        <div class="detail-info-block">
+            {{.load.Description}}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сервер #{{.reqID}} - расчет нагрузки</title>
+    <link rel="stylesheet" href="/resources/style.css?v=2">
+</head>
+<body>
+    <div class="header-nav">
+        <a href="/" class="header-nav-link">
+            <img src="http://localhost:3031/browser/imagesforlabs/site-icon.jpg" alt="Паттерны нагрузки" class="header-nav-link">
+        </a>
+    </div>
+
+    <div class="container">
+        <!-- Общая информация о заявке -->
+        <div class="request-general-info">
+            <div class="general-info-card">
+                <div class="info-header">
+                    <span class="info-label">ОПИСАНИЕ НАГРУЗКИ</span>
+                </div>
+                <div class="info-value-input">
+                    {{.request.FindDescription}}
+                </div>
+            </div>
+            
+            <div class="general-info-card">
+                <div class="info-header">
+                    <span class="info-label">ОБЩАЯ ПАМЯТЬ ПРИ НАГРУЗКЕ</span>
+                </div>
+                <div class="info-value-input">
+                    {{.request.TotalRAM}} GB.
+                </div>
+            </div>
+            
+            <div class="general-info-card">
+                <div class="info-header">
+                    <span class="info-label">ИТОГОВАЯ НАГРУЗКА</span>
+                </div>
+                <div class="info-value-input">
+                    {{.request.FinalCPU}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Заголовки столбцов -->
+        <div class="requests-header">
+            <div class="requests-column">ПАТТЕРН НАГРУЗКИ</div>
+            <div class="requests-column">ПАМЯТЬ АНОМАЛЬНОЙ НАГРУЗКИ</div>
+            <div class="requests-column">РАСЧИТАННАЯ НАГРУЗКА CPU</div>
+        </div>
+
+        <!-- Таблица с заявками -->
+        <div class="requests-container">
+            {{range .requestItems}}
+            <div class="request-item">
+                <div class="request-info-section load">
+                    <div class="request-image">
+                        <img src="{{.Image}}" alt="{{.LoadName}}">
+                    </div>
+                    <div class="load-name">{{.LoadName}}</div>
+                </div>
+                <div class="request-info-section rings-section">
+                    <div class="info-value rings-value">{{.AnomalousRAM}} GB</div>
+                </div>
+                <div class="request-info-section year-section">
+                    <div class="info-value year-value">{{.CalculatedCPU}}</div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Плашка с количеством услуг -->
+        <div class="requests-count">
+            Количество сценариев в расчете: {{len .requestItems}}
+        </div>
+    </div>
+</body>
+</html>
