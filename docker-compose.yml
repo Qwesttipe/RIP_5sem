@@ -1,0 +1,63 @@
+services:
+  # имеджи, которые запустятся по вашему желанию
+  db:
+    # название моего имеджа
+    image: postgres:12 # скачает image postgres 12 версии
+    volumes:
+      # часть настроек для хранения данных, пока для нас это не важно
+      - type: volume
+        source: postgresdb-data
+        target: /var/lib/postgresql/data
+    ports:
+      # порты
+      - "5432:5432"
+    environment:
+      # переменные окружения, меняйте их если хотите поменять пароль, логин или название стартовой базы данных
+      POSTGRES_USER: root
+      POSTGRES_DB: RIP
+      POSTGRES_PASSWORD: root
+  minio:
+    container_name: minio
+    image: minio/minio:latest
+    ports:
+      - "3030:3030"
+      - "3031:3031"
+    environment:
+      MINIO_ACCESS_KEY: nikonoff
+      MINIO_SECRET_KEY: nikonoff
+      MINIO_CONSOLE_ADDRESS: ":3031"
+    volumes:
+      - minio-data:/data
+    command: server /data
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass password
+    volumes:
+      - redis-data:/data
+
+  nginx: # наш еще один сервис в подсети docker будет nginx 
+    image: nginx:1.19.2-alpine # исходники сервиса взять отсюда
+    hostname: nginx # hostname внутри подсети docker будет nginx
+    volumes:
+      # куда физически переадресовать* память(в какие разделы) из виртуальной(в докере) на вашу машину. по сути это работает как хард линк на файл/папку. 
+      # доступ даем на ro (read only)
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro 
+    ports:
+      - "9000:9000" # форвардим порт 9000 из нашей локальной сети(localhost) (forward port) на исхоодный(внутри подсети docker)(source port)
+      - "9001:9001" # левый порт - порт вашей локальной сети компьютера, таргетный. порт справа - соурс порт - порт внутри подсети докера. 
+    depends_on: # не запускай nginx пока не запустится весь кластер minio
+      - minio
+      - redis
+      - db
+
+volumes:
+  # часть настроек для хранения данных
+  postgresdb-data:
+    driver: local
+  minio-data:
+    driver: local
+  redis-data:
+    driver: local
