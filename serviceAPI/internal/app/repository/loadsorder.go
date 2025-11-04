@@ -134,7 +134,7 @@ func (r *Repository) CompleteOrRejectOrder(orderID int, req ds.CompleteOrderRequ
 		return nil
 	}
 
-	// Рассчитываем расход материалов и раствора (только если заказ завершён)
+	// Рассчитываем необходимые ресурсы (только если заказ завершён)
 	var mmos []ds.LoadLoadOrder
 	if err := r.db.Preload("Load").Where("load_order_id = ?", orderID).Find(&mmos).Error; err != nil {
 		return err
@@ -169,3 +169,4 @@ func (r *Repository) SoftDeleteOrder(orderID int) error {
 
 	return r.db.Model(&ds.LoadOrder{}).Where("id = ?", orderID).Updates(updates).Error
 }
+
