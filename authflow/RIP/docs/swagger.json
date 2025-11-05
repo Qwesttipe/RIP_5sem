@@ -1,0 +1,348 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API сервиса аутентификации с Redis и JWT. Поддерживает роли пользователей и администраторов.",
+        "title": "Server Consumption Service API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/load_orders": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список заказов с возможностью фильтрации по статусу и диапазону дат. Разрешённые статусы: \"сформирован\", \"завершен\", \"отклонен\".",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Заявки с нагрузками"
+                ],
+                "summary": "Получить список заказов",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Статус заказа (сформирован, завершен, отклонен), можно указать несколько через запятую",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата начала фильтрации (формат YYYY-MM-DD)",
+                        "name": "start",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата окончания фильтрации (формат YYYY-MM-DD)",
+                        "name": "end",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешный ответ со списком заказов",
+                        "schema": {
+                            "$ref": "#/definitions/ds.OrdersListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка на сервере",
+                        "schema": {
+                            "$ref": "#/definitions/ds.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/login": {
+            "post": {
+                "description": "Авторизует пользователя по логину и паролю, возвращает JWT-токен и время жизни",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Управление пользователями"
+                ],
+                "summary": "Аутентификация пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ds.LoginReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ds.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Пользователь не найден или неверный пароль",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Добавляет JWT-токен в черный список (блеклист) Redis, чтобы он стал недействительным",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Управление пользователями"
+                ],
+                "summary": "Деаутентификация пользователя",
+                "responses": {
+                    "200": {
+                        "description": "Успешный выход"
+                    },
+                    "400": {
+                        "description": "Некорректный токен",
+                        "schema": {
+                            "$ref": "#/definitions/ds.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при записи токена в блеклист",
+                        "schema": {
+                            "$ref": "#/definitions/ds.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sign_up": {
+            "post": {
+                "description": "Регистрирует нового пользователя с логином, паролем и (опционально) ролью.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Управление пользователями"
+                ],
+                "summary": "Регистрация нового пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные нового пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ds.RegisterReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно зарегистрирован",
+                        "schema": {
+                            "$ref": "#/definitions/ds.RegisterResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные данные или пустые поля",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при сохранении пользователя",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "ds.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Некорректный токен"
+                }
+            }
+        },
+        "ds.LoginReq": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "ds.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                },
+                "expires_in": {
+                    "description": "время жизни токена (в секундах)",
+                    "type": "integer",
+                    "example": 3600
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
+        },
+        "ds.OrderResponse": {
+            "type": "object",
+            "properties": {
+                "date_create": {
+                    "type": "string"
+                },
+                "date_finish": {
+                    "type": "string"
+                },
+                "date_form": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "ds.OrdersListResponse": {
+            "type": "object",
+            "properties": {
+                "orders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ds.OrderResponse"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        },
+        "ds.RegisterReq": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "role": {
+                    "description": "опционально",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/role.Role"
+                        }
+                    ]
+                }
+            }
+        },
+        "ds.RegisterResp": {
+            "type": "object",
+            "properties": {
+                "ok": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "description": "добавляем поле роли",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/role.Role"
+                        }
+                    ]
+                }
+            }
+        },
+        "role.Role": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "Admin": "2",
+                "Guest": "0",
+                "User": "1"
+            },
+            "x-enum-descriptions": [
+                "0",
+                "1",
+                "2"
+            ],
+            "x-enum-varnames": [
+                "Guest",
+                "User",
+                "Admin"
+            ]
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

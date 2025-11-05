@@ -1,0 +1,233 @@
+basePath: /
+definitions:
+  ds.ErrorResponse:
+    properties:
+      error:
+        example: Некорректный токен
+        type: string
+    type: object
+  ds.LoginReq:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  ds.LoginResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        type: string
+      expires_in:
+        description: время жизни токена (в секундах)
+        example: 3600
+        type: integer
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  ds.OrderResponse:
+    properties:
+      date_create:
+        type: string
+      date_finish:
+        type: string
+      date_form:
+        type: string
+      id:
+        type: integer
+      status:
+        type: string
+    type: object
+  ds.OrdersListResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/ds.OrderResponse'
+        type: array
+      status:
+        example: success
+        type: string
+    type: object
+  ds.RegisterReq:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/role.Role'
+        description: опционально
+    type: object
+  ds.RegisterResp:
+    properties:
+      ok:
+        type: boolean
+      role:
+        allOf:
+        - $ref: '#/definitions/role.Role'
+        description: добавляем поле роли
+    type: object
+  role.Role:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-comments:
+      Admin: "2"
+      Guest: "0"
+      User: "1"
+    x-enum-descriptions:
+    - "0"
+    - "1"
+    - "2"
+    x-enum-varnames:
+    - Guest
+    - User
+    - Admin
+host: localhost:8080
+info:
+  contact: {}
+  description: API сервиса аутентификации с Redis и JWT. Поддерживает роли пользователей
+    и администраторов.
+  title: Server Consumption Service API
+  version: "1.0"
+paths:
+  /api/load_orders:
+    get:
+      consumes:
+      - application/json
+      description: 'Возвращает список заказов с возможностью фильтрации по статусу
+        и диапазону дат. Разрешённые статусы: "сформирован", "завершен", "отклонен".'
+      parameters:
+      - description: Статус заказа (сформирован, завершен, отклонен), можно указать
+          несколько через запятую
+        in: query
+        name: status
+        type: string
+      - description: Дата начала фильтрации (формат YYYY-MM-DD)
+        in: query
+        name: start
+        type: string
+      - description: Дата окончания фильтрации (формат YYYY-MM-DD)
+        in: query
+        name: end
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ со списком заказов
+          schema:
+            $ref: '#/definitions/ds.OrdersListResponse'
+        "500":
+          description: Ошибка на сервере
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получить список заказов
+      tags:
+      - Заявки с нагрузками
+  /api/users/login:
+    post:
+      consumes:
+      - application/json
+      description: Авторизует пользователя по логину и паролю, возвращает JWT-токен
+        и время жизни
+      parameters:
+      - description: Данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ds.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ds.LoginResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Пользователь не найден или неверный пароль
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Аутентификация пользователя
+      tags:
+      - Управление пользователями
+  /api/users/logout:
+    post:
+      description: Добавляет JWT-токен в черный список (блеклист) Redis, чтобы он
+        стал недействительным
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный выход
+        "400":
+          description: Некорректный токен
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+        "500":
+          description: Ошибка при записи токена в блеклист
+          schema:
+            $ref: '#/definitions/ds.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Деаутентификация пользователя
+      tags:
+      - Управление пользователями
+  /sign_up:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя с логином, паролем и (опционально)
+        ролью.
+      parameters:
+      - description: Данные нового пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ds.RegisterReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован
+          schema:
+            $ref: '#/definitions/ds.RegisterResp'
+        "400":
+          description: Некорректные данные или пустые поля
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка при сохранении пользователя
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Регистрация нового пользователя
+      tags:
+      - Управление пользователями
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
